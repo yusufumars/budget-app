@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="theme-color" content="#6366f1"/>
+<title>My Budget</title>
+<link rel="manifest" href="manifest.json"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--p:#6366f1;--g:#10b981;--r:#ef4444;--y:#f59e0b;--bg:#f1f5f9;--card:#fff;--txt:#1e293b;--muted:#64748b;--border:#e2e8f0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;padding-bottom:80px}
+header{background:var(--p);color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+header h1{font-size:1.1rem;font-weight:700}
+.month-nav{display:flex;align-items:center;gap:10px}
+.month-nav button{background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center}
+.month-nav span{font-size:.85rem;font-weight:600;min-width:110px;text-align:center}
+/* Bottom Nav */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);display:flex;z-index:200;box-shadow:0 -2px 8px rgba(0,0,0,.08)}
+.nav-btn{flex:1;padding:10px 4px 8px;border:none;background:none;font-size:.6rem;font-weight:600;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:.15s}
+.nav-btn .icon{font-size:1.3rem}
+.nav-btn.active{color:var(--p)}
+/* Pages */
+.page{display:none;padding:12px;max-width:640px;margin:0 auto}
+.page.active{display:block}
+/* Cards */
+.card{background:var(--card);border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.card-title{font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+/* Summary row */
+.summary-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.sum-card{background:var(--card);border-radius:12px;padding:12px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.sum-card .lbl{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.sum-card .val{font-size:1.15rem;font-weight:800;margin-top:3px}
+.c-green{color:var(--g)} .c-red{color:var(--r)} .c-purple{color:var(--p)} .c-yellow{color:var(--y)}
+/* Alerts */
+.alert{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:10px;margin-bottom:8px;font-size:.82rem;line-height:1.4}
+.alert-red{background:#fee2e2;border-left:3px solid var(--r)}
+.alert-yellow{background:#fef9c3;border-left:3px solid var(--y)}
+.alert-green{background:#d1fae5;border-left:3px solid var(--g)}
+/* Budget bars */
+.budget-item{margin-bottom:12px}
+.budget-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.budget-name{font-weight:600;font-size:.88rem}
+.budget-amounts{font-size:.75rem;color:var(--muted)}
+.bar-bg{background:#e2e8f0;border-radius:99px;height:8px;overflow:hidden}
+.bar-fill{height:8px;border-radius:99px;transition:.4s}
+.bar-green{background:var(--g)} .bar-yellow{background:var(--y)} .bar-red{background:var(--r)}
+/* Forms */
+label{display:block;font-size:.78rem;font-weight:600;color:#475569;margin-bottom:4px;margin-top:10px}
+input,select,textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.92rem;outline:none;transition:.2s;background:#f8fafc;color:var(--txt)}
+input:focus,select:focus,textarea:focus{border-color:var(--p);background:#fff}
+.btn{display:block;width:100%;padding:12px;border:none;border-radius:8px;font-size:.92rem;font-weight:700;cursor:pointer;margin-top:12px;transition:.15s}
+.btn-p{background:var(--p);color:#fff} .btn-p:hover{background:#4f46e5}
+.btn-g{background:var(--g);color:#fff}
+.btn-sm{width:auto;padding:5px 11px;font-size:.75rem;margin:0;border-radius:6px;font-weight:600;cursor:pointer;border:none}
+.btn-del{background:#fee2e2;color:var(--r)}
+.btn-edit{background:#ede9fe;color:var(--p)}
+/* Quick entry */
+.quick-box{background:var(--p);border-radius:14px;padding:16px;margin-bottom:12px}
+.quick-box label{color:rgba(255,255,255,.8)}
+.quick-box input,.quick-box select{background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);color:#fff;font-size:1rem}
+.quick-box input::placeholder{color:rgba(255,255,255,.5)}
+.quick-box select option{color:var(--txt);background:#fff}
+.quick-box input:focus,.quick-box select:focus{background:rgba(255,255,255,.25);border-color:#fff}
+.quick-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.quick-hint{color:rgba(255,255,255,.7);font-size:.75rem;margin-top:6px}
+/* List items */
+.list-item{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f1f5f9}
+.list-item:last-child{border:none}
+.li-left .li-main{font-weight:600;font-size:.88rem}
+.li-left .li-sub{font-size:.72rem;color:var(--muted);margin-top:2px}
+.li-right{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.li-amt{font-weight:700;font-size:.9rem}
+.actions{display:flex;gap:6px}
+/* Goal */
+.goal-pct{font-size:.72rem;color:var(--muted)}
+/* AI entry */
+.ai-box{position:relative}
+.ai-result{background:#f0fdf4;border:1.5px solid var(--g);border-radius:8px;padding:10px;margin-top:8px;font-size:.85rem;display:none}
+/* Toggle */
+.type-toggle{display:flex;gap:6px;margin-bottom:2px}
+.type-btn{flex:1;padding:9px;border:2px solid var(--border);border-radius:8px;background:#f8fafc;font-weight:700;cursor:pointer;transition:.2s;font-size:.85rem}
+.type-btn.income.on{background:#d1fae5;border-color:var(--g);color:#065f46}
+.type-btn.expense.on{background:#fee2e2;border-color:var(--r);color:#991b1b}
+.badge{display:inline-block;padding:2px 7px;border-radius:99px;font-size:.68rem;font-weight:700}
+.badge-g{background:#d1fae5;color:#065f46} .badge-y{background:#fef9c3;color:#92400e} .badge-r{background:#fee2e2;color:#991b1b}
+.empty{text-align:center;color:#94a3b8;padding:28px 0;font-size:.85rem}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:9px 18px;border-radius:8px;font-size:.85rem;z-index:999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+.divider{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:8px 0 4px;border-bottom:1px solid var(--border);margin-bottom:8px}
+.group-label{font-size:.7rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 4px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>💰 My Budget</h1>
+  <div class="month-nav">
+    <button onclick="changeMonth(-1)">◀</button>
+    <span id="monthLabel"></span>
+    <button onclick="changeMonth(1)">▶</button>
+  </div>
+</header>
+
+<!-- ── PAGES ── -->
+
+<!-- DASHBOARD -->
+<div id="page-dash" class="page active">
+  <div class="summary-row">
+    <div class="sum-card"><div class="lbl">Income</div><div class="val c-green" id="d-income">₦0</div></div>
+    <div class="sum-card"><div class="lbl">Spent</div><div class="val c-red" id="d-spent">₦0</div></div>
+    <div class="sum-card"><div class="lbl">Saved</div><div class="val c-purple" id="d-saved">₦0</div></div>
+    <div class="sum-card"><div class="lbl">Remaining</div><div class="val c-yellow" id="d-remaining">₦0</div></div>
+  </div>
+  <div id="alertsBox"></div>
+  <div class="card">
+    <div class="card-title">📊 Budget Status</div>
+    <div id="budgetBars"><div class="empty">Set budgets in the Budget tab</div></div>
+  </div>
+</div>
+
+<!-- QUICK ADD -->
+<div id="page-add" class="page">
+  <!-- AI Natural Entry -->
+  <div class="card">
+    <div class="card-title">⚡ AI Quick Entry</div>
+    <p style="font-size:.8rem;color:var(--muted);margin-bottom:8px">Type naturally e.g. <strong>3500 transport POS</strong> or <strong>1000 food suya</strong></p>
+    <div class="ai-box">
+      <input type="text" id="aiInput" placeholder="amount category note..." onkeydown="if(event.key==='Enter')parseAI()"/>
+      <div class="ai-result" id="aiResult"></div>
+    </div>
+    <button class="btn btn-g" onclick="parseAI()">⚡ Parse & Save</button>
+  </div>
+
+  <!-- Manual Entry -->
+  <div class="quick-box">
+    <div class="card-title" style="color:#fff;margin-bottom:8px">➕ Manual Entry</div>
+    <div class="type-toggle">
+      <button class="type-btn income on" id="btnIncome" onclick="setEntryType('income')">📈 Income</button>
+      <button class="type-btn expense" id="btnExpense" onclick="setEntryType('expense')">📉 Expense</button>
+    </div>
+    <label>Amount (₦)</label>
+    <input type="number" id="eAmount" placeholder="0" inputmode="decimal" style="font-size:1.4rem;font-weight:700"/>
+    <div class="quick-row">
+      <div>
+        <label>Category / Source</label>
+        <select id="eCategory"></select>
+      </div>
+      <div>
+        <label>Date</label>
+        <input type="date" id="eDate"/>
+      </div>
+    </div>
+    <label>Note (optional)</label>
+    <input type="text" id="eNote" placeholder="What was this for?"/>
+    <button class="btn btn-p" style="background:#fff;color:var(--p)" onclick="saveEntry()">💾 Save</button>
+    <div class="quick-hint">💡 Tip: Just enter amount + category and tap Save</div>
+  </div>
+</div>
+
+<!-- BUDGET MANAGER -->
+<div id="page-budget" class="page">
+  <div class="card">
+    <div class="card-title">Set Category Budgets</div>
+    <p style="font-size:.78rem;color:var(--muted);margin-bottom:8px">Set budget and minimum alert threshold for each category</p>
+    <div id="budgetForms"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">➕ Add Custom Category</div>
+    <label>Category Name</label>
+    <input type="text" id="newCatName" placeholder="e.g. Car Maintenance"/>
+    <label>Group</label>
+    <select id="newCatGroup">
+      <option>Living</option><option>Communication</option><option>Family</option>
+      <option>Personal</option><option>Household</option><option>Financial</option><option>Other</option>
+    </select>
+    <button class="btn btn-p" onclick="addCustomCategory()">Add Category</button>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div id="page-history" class="page">
+  <div class="card" style="padding:10px 14px">
+    <div style="display:flex;gap:8px">
+      <select id="hType" onchange="loadHistory()" style="flex:1">
+        <option value="">All</option>
+        <option value="expense">Expenses</option>
+        <option value="income">Income</option>
+        <option value="savings">Savings</option>
+      </select>
+      <select id="hCat" onchange="loadHistory()" style="flex:1"><option value="">All Categories</option></select>
+    </div>
+  </div>
+  <div class="card" id="historyList"><div class="empty">Loading...</div></div>
+</div>
+
+<!-- GOALS & SAVINGS -->
+<div id="page-goals" class="page">
+  <div class="sum-card card" style="margin-bottom:10px">
+    <div class="lbl">Total Saved (All Time)</div>
+    <div class="val c-purple" id="totalSaved">₦0</div>
+  </div>
+
+  <!-- Add Savings -->
+  <div class="card">
+    <div class="card-title">🏦 Add Savings</div>
+    <label>Amount (₦)</label>
+    <input type="number" id="savAmt" placeholder="0" inputmode="decimal"/>
+    <div class="quick-row">
+      <div><label>Date</label><input type="date" id="savDate"/></div>
+      <div><label>Note</label><input type="text" id="savNote" placeholder="Monthly savings"/></div>
+    </div>
+    <button class="btn btn-p" onclick="addSavings()">Save</button>
+  </div>
+
+  <!-- Goals -->
+  <div class="card">
+    <div class="card-title">🎯 Goals</div>
+    <div id="goalsList"></div>
+    <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px">
+      <div class="card-title">New Goal</div>
+      <label>Goal Name</label>
+      <input type="text" id="gName" placeholder="e.g. Land Fund"/>
+      <div class="quick-row">
+        <div><label>Target (₦)</label><input type="number" id="gTarget" placeholder="5000000" inputmode="decimal"/></div>
+        <div><label>Deadline</label><input type="date" id="gDeadline"/></div>
+      </div>
+      <button class="btn btn-p" onclick="addGoal()">Create Goal</button>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <button class="nav-btn active" onclick="showPage('dash',this)"><span class="icon">📊</span>Dashboard</button>
+  <button class="nav-btn" onclick="showPage('add',this)"><span class="icon">➕</span>Add</button>
+  <button class="nav-btn" onclick="showPage('budget',this)"><span class="icon">🎛</span>Budgets</button>
+  <button class="nav-btn" onclick="showPage('history',this)"><span class="icon">📋</span>History</button>
+  <button class="nav-btn" onclick="showPage('goals',this)"><span class="icon">🎯</span>Goals</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ── EDIT MODAL ── -->
+<div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;padding:20px;width:90%;max-width:400px">
+    <h3 style="margin-bottom:12px;font-size:1rem">Edit Entry</h3>
+    <label>Amount (₦)</label><input type="number" id="mAmt"/>
+    <label>Note</label><input type="text" id="mNote"/>
+    <label>Date</label><input type="date" id="mDate"/>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-p" style="flex:1" onclick="saveEdit()">Save</button>
+      <button class="btn" style="flex:1;background:#f1f5f9" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ───────────────────────────────────────────────────
+const SUPABASE_URL = 'https://szdncpiyhtvfjyzagduw.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_v0b084tUM16GBQkVLKhwWQ_3wfQlbnx';
+
+// ── API ──────────────────────────────────────────────────────
+const api = (path, method='GET', body=null) => fetch(SUPABASE_URL+'/rest/v1/'+path, {
+  method,
+  headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+  body: body ? JSON.stringify(body) : null
+}).then(r => r.ok ? r.json() : r.json().then(e=>{throw e}));
+
+// ── STATE ────────────────────────────────────────────────────
+let curMonth = new Date();
+let categories = [];
+let editCtx = null; // {table, id}
+
+// ── UTILS ────────────────────────────────────────────────────
+const fmt = n => '₦' + Number(n||0).toLocaleString('en-NG',{minimumFractionDigits:0});
+const today = () => new Date().toISOString().split('T')[0];
+const toast = msg => {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+};
+const mRange = () => {
+  const y=curMonth.getFullYear(), m=curMonth.getMonth();
+  return {
+    start: new Date(y,m,1).toISOString().split('T')[0],
+    end: new Date(y,m+1,0).toISOString().split('T')[0]
+  };
+};
+const daysLeft = () => {
+  const now = new Date(), end = new Date(now.getFullYear(),now.getMonth()+1,0);
+  return Math.max(1, Math.ceil((end-now)/(1000*60*60*24)));
+};
+const daysInMonth = () => new Date(curMonth.getFullYear(),curMonth.getMonth()+1,0).getDate();
+const daysPassed = () => {
+  const y=curMonth.getFullYear(), m=curMonth.getMonth();
+  const now = new Date();
+  if(now.getFullYear()===y && now.getMonth()===m) return now.getDate();
+  return daysInMonth();
+};
+
+// ── MONTH NAV ────────────────────────────────────────────────
+function changeMonth(dir) {
+  curMonth = new Date(curMonth.getFullYear(), curMonth.getMonth()+dir, 1);
+  updateMonthLabel();
+  const cur = document.querySelector('.nav-btn.active');
+  const p = cur ? cur.getAttribute('onclick').match(/'(\w+)'/)?.[1] : 'dash';
+  if(p==='dash') loadDashboard();
+  else if(p==='history') loadHistory();
+}
+function updateMonthLabel() {
+  document.getElementById('monthLabel').textContent =
+    curMonth.toLocaleString('default',{month:'short',year:'numeric'});
+}
+
+// ── PAGE NAV ─────────────────────────────────────────────────
+function showPage(p, btn) {
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(p==='dash') loadDashboard();
+  if(p==='history') loadHistory();
+  if(p==='budget') loadBudgetForms();
+  if(p==='goals') loadGoalsPage();
+}
+
+// ── CATEGORIES ───────────────────────────────────────────────
+async function loadCategories() {
+  categories = await api('categories?order=group_name.asc,name.asc');
+  populateAllSelects();
+}
+
+function populateAllSelects() {
+  const expCats = categories.filter(c=>c.name!=='Savings'&&c.name!=='Investments'&&c.name!=='Unit Trust');
+  const incSrcs = ['Salary','Bonus','Side Income','Other Income'];
+  
+  // History filter
+  const hCat = document.getElementById('hCat');
+  hCat.innerHTML='<option value="">All Categories</option>'+
+    categories.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  
+  refreshEntrySelect();
+}
+
+function refreshEntrySelect() {
+  const sel = document.getElementById('eCategory');
+  if(!sel) return;
+  if(curEntryType==='expense') {
+    sel.innerHTML = categories.map(c=>`<option value="${c.id}" data-name="${c.name}">${c.name}</option>`).join('');
+  } else {
+    ['Salary','Bonus','Side Income','Other Income'].forEach((s,i)=>{
+      if(i===0) sel.innerHTML='';
+      sel.innerHTML += `<option value="income_${s}">${s}</option>`;
+    });
+  }
+}
+
+// ── ENTRY TYPE ───────────────────────────────────────────────
+let curEntryType = 'income';
+function setEntryType(t) {
+  curEntryType = t;
+  document.getElementById('btnIncome').classList.toggle('on', t==='income');
+  document.getElementById('btnExpense').classList.toggle('on', t==='expense');
+  document.getElementById('eCategory').querySelector('option')?.remove?.();
+  refreshEntrySelect();
+}
+
+// ── SAVE ENTRY ───────────────────────────────────────────────
+async function saveEntry() {
+  const amt = parseFloat(document.getElementById('eAmount').value);
+  const catEl = document.getElementById('eCategory');
+  const catId = catEl.value;
+  const note = document.getElementById('eNote').value;
+  const date = document.getElementById('eDate').value || today();
+  if(!amt || !catId) return toast('Enter amount and select category');
+
+  if(curEntryType==='expense') {
+    await api('expenses','POST',{amount:amt, category_id:catId, note, date});
+    toast('✅ Expense saved!');
+  } else {
+    const src = catEl.options[catEl.selectedIndex].text;
+    await api('income','POST',{amount:amt, source:src, note, date});
+    toast('✅ Income saved!');
+  }
+  document.getElementById('eAmount').value='';
+  document.getElementById('eNote').value='';
+  loadDashboard();
+}
+
+// ── AI ENTRY ─────────────────────────────────────────────────
+async function parseAI() {
+  const raw = document.getElementById('aiInput').value.trim();
+  if(!raw) return toast('Type something first');
+  
+  // Parse: first number = amount, last word(s) = note, middle = category
+  const parts = raw.split(/\s+/);
+  const amount = parseFloat(parts[0]);
+  if(isNaN(amount)) return toast('Start with a number e.g. 3500 food suya');
+  
+  const rest = parts.slice(1);
+  // Match category by fuzzy name
+  let matched = null, matchScore = 0;
+  for(const cat of categories) {
+    for(const word of rest) {
+      const s = similarity(word.toLowerCase(), cat.name.toLowerCase());
+      if(s>matchScore && s>0.4) { matchScore=s; matched=cat; }
+    }
+  }
+  
+  const note = rest.filter(w=>!matched||!w.toLowerCase().includes(matched.name.toLowerCase().split(' ')[0])).join(' ');
+  const date = today();
+  const resultBox = document.getElementById('aiResult');
+  
+  if(!matched) {
+    resultBox.style.display='block';
+    resultBox.style.background='#fee2e2';
+    resultBox.style.border='1.5px solid var(--r)';
+    resultBox.innerHTML = `❌ Category not recognised. Try: <em>food, transport, data, health...</em>`;
+    return;
+  }
+  
+  resultBox.style.display='block';
+  resultBox.style.background='#f0fdf4';
+  resultBox.style.border='1.5px solid var(--g)';
+  resultBox.innerHTML = `✅ <strong>${fmt(amount)}</strong> → <strong>${matched.name}</strong>${note?' · '+note:''}<br>
+    <button class="btn-sm btn-p" style="margin-top:6px;background:var(--g);color:#fff" onclick="confirmAI(${amount},'${matched.id}','${note}','${date}')">Confirm & Save</button>
+    <button class="btn-sm" style="margin-top:6px;background:#f1f5f9;margin-left:6px" onclick="document.getElementById('aiResult').style.display='none'">Cancel</button>`;
+}
+
+async function confirmAI(amount, catId, note, date) {
+  await api('expenses','POST',{amount, category_id:catId, note, date});
+  document.getElementById('aiInput').value='';
+  document.getElementById('aiResult').style.display='none';
+  toast('✅ Saved via AI!');
+  loadDashboard();
+}
+
+function similarity(a, b) {
+  if(b.includes(a)||a.includes(b)) return 0.9;
+  let match=0;
+  for(let i=0;i<Math.min(a.length,b.length);i++) if(a[i]===b[i]) match++;
+  return match/Math.max(a.length,b.length);
+}
+
+// ── DASHBOARD ────────────────────────────────────────────────
+async function loadDashboard() {
+  const {start,end} = mRange();
+  const [exps, incs, savs] = await Promise.all([
+    api(`expenses?date=gte.${start}&date=lte.${end}&order=date.desc`),
+    api(`income?date=gte.${start}&date=lte.${end}`),
+    api(`savings?date=gte.${start}&date=lte.${end}`)
+  ]);
+  
+  const totalInc = incs.reduce((s,i)=>s+Number(i.amount),0);
+  const totalExp = exps.reduce((s,e)=>s+Number(e.amount),0);
+  const totalSav = savs.reduce((s,v)=>s+Number(v.amount),0);
+  const remaining = totalInc - totalExp - totalSav;
+  
+  document.getElementById('d-income').textContent = fmt(totalInc);
+  document.getElementById('d-spent').textContent = fmt(totalExp);
+  document.getElementById('d-saved').textContent = fmt(totalSav);
+  document.getElementById('d-remaining').textContent = fmt(remaining);
+  
+  // Budget bars
+  renderBudgetBars(exps);
+  
+  // Alerts
+  renderAlerts(exps, totalInc, totalSav);
+}
+
+function renderBudgetBars(exps) {
+  const cats = categories.filter(c=>c.budget>0);
+  if(!cats.length) {
+    document.getElementById('budgetBars').innerHTML='<div class="empty">No budgets set. Go to Budgets tab →</div>';
+    return;
+  }
+  
+  // Group expenses by category
+  const spentMap = {};
+  exps.forEach(e=>{ spentMap[e.category_id]=(spentMap[e.category_id]||0)+Number(e.amount); });
+  
+  // Group cats
+  const groups = {};
+  cats.forEach(c=>{ if(!groups[c.group_name]) groups[c.group_name]=[]; groups[c.group_name].push(c); });
+  
+  let html='';
+  for(const [grp, list] of Object.entries(groups)) {
+    html+=`<div class="group-label">${grp}</div>`;
+    for(const c of list) {
+      const spent = spentMap[c.id]||0;
+      const pct = Math.min(100, c.budget>0 ? Math.round((spent/c.budget)*100) : 0);
+      const rem = c.budget - spent;
+      let cls='bar-green', badge='', badgeCls='badge-g';
+      if(pct>=100){cls='bar-red';badge='🔴 Over';badgeCls='badge-r';}
+      else if(c.min_threshold>0&&rem<=c.min_threshold){cls='bar-red';badge='🔴 Critical';badgeCls='badge-r';}
+      else if(pct>=75){cls='bar-yellow';badge='⚠️ Low';badgeCls='badge-y';}
+      html+=`<div class="budget-item">
+        <div class="budget-header">
+          <span class="budget-name">${c.name} ${badge?`<span class="badge ${badgeCls}">${badge}</span>`:''}</span>
+          <span class="budget-amounts">${fmt(spent)} / ${fmt(c.budget)}</span>
+        </div>
+        <div class="bar-bg"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:2px">${rem>=0?fmt(rem)+' left':'Over by '+fmt(Math.abs(rem))}</div>
+      </div>`;
+    }
+  }
+  document.getElementById('budgetBars').innerHTML=html;
+}
+
+function renderAlerts(exps, totalInc, totalSav) {
+  const alerts = [];
+  const dl = daysLeft();
+  const dp = daysPassed();
+  const spentMap = {};
+  exps.forEach(e=>{ spentMap[e.category_id]=(spentMap[e.category_id]||0)+Number(e.amount); });
+  
+  for(const c of categories) {
+    if(!c.budget) continue;
+    const spent = spentMap[c.id]||0;
+    const rem = c.budget - spent;
+    const pct = spent/c.budget;
+    
+    // Over budget
+    if(pct>=1) { alerts.push({cls:'alert-red',msg:`🔴 <strong>${c.name}</strong> is over budget by ${fmt(Math.abs(rem))}`}); continue; }
+    
+    // Below minimum threshold
+    if(c.min_threshold>0 && rem<=c.min_threshold)
+      alerts.push({cls:'alert-red',msg:`🔴 <strong>${c.name}</strong> reached minimum threshold (${fmt(rem)} left)`});
+    else if(pct>=0.75)
+      alerts.push({cls:'alert-yellow',msg:`⚠️ <strong>${c.name}</strong> is ${Math.round(pct*100)}% used — ${fmt(rem)} remaining`});
+    
+    // Time-based prediction
+    if(dp>0 && dl>0) {
+      const dailyAvg = spent/dp;
+      const projected = spent + (dailyAvg*dl);
+      if(projected>c.budget)
+        alerts.push({cls:'alert-yellow',msg:`📅 <strong>${c.name}</strong> may exceed budget — projected ${fmt(projected)} vs budget ${fmt(c.budget)}`});
+    }
+  }
+  
+  // Remaining money warning
+  const remaining = totalInc - exps.reduce((s,e)=>s+Number(e.amount),0) - totalSav;
+  if(totalInc>0 && remaining<0)
+    alerts.push({cls:'alert-red',msg:`🔴 You are <strong>${fmt(Math.abs(remaining))}</strong> over your income this month`});
+  else if(totalInc>0 && remaining<totalInc*0.1)
+    alerts.push({cls:'alert-yellow',msg:`⚠️ Only <strong>${fmt(remaining)}</strong> remaining for the month`});
+  
+  const box = document.getElementById('alertsBox');
+  box.innerHTML = alerts.length
+    ? alerts.map(a=>`<div class="alert ${a.cls}">${a.msg}</div>`).join('')
+    : '<div class="alert alert-green">✅ All budgets looking good!</div>';
+}
+
+// ── BUDGET FORMS ─────────────────────────────────────────────
+async function loadBudgetForms() {
+  await loadCategories();
+  const groups = {};
+  categories.forEach(c=>{ if(!groups[c.group_name]) groups[c.group_name]=[]; groups[c.group_name].push(c); });
+  let html='';
+  for(const [grp, list] of Object.entries(groups)) {
+    html+=`<div class="divider">${grp}</div>`;
+    for(const c of list) {
+      html+=`<div style="margin-bottom:10px">
+        <div style="font-weight:600;font-size:.85rem;margin-bottom:4px">${c.name}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div>
+            <label style="margin-top:0">Budget (₦)</label>
+            <input type="number" id="b_${c.id}" value="${c.budget||''}" placeholder="0" inputmode="decimal" onchange="saveBudget('${c.id}')"/>
+          </div>
+          <div>
+            <label style="margin-top:0">Min Alert (₦)</label>
+            <input type="number" id="t_${c.id}" value="${c.min_threshold||''}" placeholder="0" inputmode="decimal" onchange="saveBudget('${c.id}')"/>
+          </div>
+        </div>
+      </div>`;
+    }
+  }
+  document.getElementById('budgetForms').innerHTML=html;
+}
+
+async function saveBudget(id) {
+  const budget = parseFloat(document.getElementById('b_'+id).value)||0;
+  const min_threshold = parseFloat(document.getElementById('t_'+id).value)||0;
+  await api(`categories?id=eq.${id}`,'PATCH',{budget,min_threshold});
+  toast('Budget saved');
+  // Update local
+  const idx = categories.findIndex(c=>c.id===id);
+  if(idx>-1){categories[idx].budget=budget;categories[idx].min_threshold=min_threshold;}
+}
+
+async function addCustomCategory() {
+  const name = document.getElementById('newCatName').value.trim();
+  const group_name = document.getElementById('newCatGroup').value;
+  if(!name) return toast('Enter a category name');
+  await api('categories','POST',{name,group_name,is_custom:true,budget:0,min_threshold:0});
+  document.getElementById('newCatName').value='';
+  toast('✅ Category added!');
+  loadBudgetForms();
+}
+
+// ── HISTORY ──────────────────────────────────────────────────
+async function loadHistory() {
+  const type = document.getElementById('hType').value;
+  const catId = document.getElementById('hCat').value;
+  const {start,end} = mRange();
+  let items = [];
+  
+  if(!type||type==='expense') {
+    let q=`expenses?date=gte.${start}&date=lte.${end}&order=date.desc`;
+    if(catId) q+=`&category_id=eq.${catId}`;
+    const e = await api(q);
+    e.forEach(i=>items.push({...i,_type:'expense'}));
+  }
+  if(!type||type==='income') {
+    const i = await api(`income?date=gte.${start}&date=lte.${end}&order=date.desc`);
+    i.forEach(i=>items.push({...i,_type:'income'}));
+  }
+  if(!type||type==='savings') {
+    const s = await api(`savings?date=gte.${start}&date=lte.${end}&order=date.desc`);
+    s.forEach(i=>items.push({...i,_type:'savings'}));
+  }
+  
+  items.sort((a,b)=>new Date(b.date)-new Date(a.date)||(new Date(b.created_at)-new Date(a.created_at)));
+  
+  if(!items.length){document.getElementById('historyList').innerHTML='<div class="empty">No entries found</div>';return;}
+  
+  const catMap = {};
+  categories.forEach(c=>catMap[c.id]=c.name);
+  
+  document.getElementById('historyList').innerHTML = items.map(item=>{
+    const label = item._type==='expense'?(catMap[item.category_id]||'Expense')
+                : item._type==='income'?(item.source||'Income')
+                : 'Savings';
+    const amt = item._type==='expense'?`<span style="color:var(--r)">-${fmt(item.amount)}</span>`
+                                       :`<span style="color:var(--g)">+${fmt(item.amount)}</span>`;
+    return `<div class="list-item">
+      <div class="li-left">
+        <div class="li-main">${label}</div>
+        <div class="li-sub">${item.note||''} · ${item.date}</div>
+      </div>
+      <div class="li-right">
+        <div class="li-amt">${amt}</div>
+        <div class="actions">
+          <button class="btn-sm btn-edit" onclick="openEdit('${item._type}','${item.id}',${item.amount},'${item.note||''}','${item.date}')">✏️</button>
+          <button class="btn-sm btn-del" onclick="deleteEntry('${item._type}','${item.id}')">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── EDIT / DELETE ─────────────────────────────────────────────
+function openEdit(table, id, amt, note, date) {
+  editCtx = {table, id};
+  document.getElementById('mAmt').value = amt;
+  document.getElementById('mNote').value = note;
+  document.getElementById('mDate').value = date;
+  document.getElementById('modal').style.display='flex';
+}
+function closeModal(){document.getElementById('modal').style.display='none';}
+async function saveEdit() {
+  const amt = parseFloat(document.getElementById('mAmt').value);
+  const note = document.getElementById('mNote').value;
+  const date = document.getElementById('mDate').value;
+  if(!amt) return toast('Enter an amount');
+  const {table,id}=editCtx;
+  const path = table==='expense'?`expenses?id=eq.${id}`
+             : table==='income'?`income?id=eq.${id}`
+             : `savings?id=eq.${id}`;
+  await api(path,'PATCH',{amount:amt,note,date});
+  closeModal(); toast('✅ Updated!'); loadHistory(); loadDashboard();
+}
+async function deleteEntry(table, id) {
+  if(!confirm('Delete this entry?')) return;
+  const path = table==='expense'?`expenses?id=eq.${id}`
+             : table==='income'?`income?id=eq.${id}`
+             : `savings?id=eq.${id}`;
+  await api(path,'DELETE');
+  toast('Deleted'); loadHistory(); loadDashboard();
+}
+
+// ── SAVINGS & GOALS ───────────────────────────────────────────
+async function addSavings() {
+  const amt = parseFloat(document.getElementById('savAmt').value);
+  const date = document.getElementById('savDate').value||today();
+  const note = document.getElementById('savNote').value;
+  if(!amt) return toast('Enter an amount');
+  await api('savings','POST',{amount:amt,date,note});
+  document.getElementById('savAmt').value='';
+  toast('✅ Savings added!'); loadGoalsPage(); loadDashboard();
+}
+
+async function addGoal() {
+  const name = document.getElementById('gName').value;
+  const target = parseFloat(document.getElementById('gTarget').value);
+  const deadline = document.getElementById('gDeadline').value;
+  if(!name||!target) return toast('Fill in name and target');
+  await api('goals','POST',{name,target_amount:target,deadline:deadline||null,saved_amount:0});
+  document.getElementById('gName').value='';
+  document.getElementById('gTarget').value='';
+  toast('✅ Goal created!'); loadGoalsPage();
+}
+
+async function loadGoalsPage() {
+  const [savs,goals] = await Promise.all([
+    api('savings?order=date.desc'),
+    api('goals?order=created_at.desc')
+  ]);
+  const total = savs.reduce((s,v)=>s+Number(v.amount),0);
+  document.getElementById('totalSaved').textContent = fmt(total);
+  
+  document.getElementById('goalsList').innerHTML = goals.length
+    ? goals.map(g=>{
+        const pct = Math.min(100,Math.round(g.saved_amount/g.target_amount*100));
+        let cls='bar-green';
+        if(pct<30) cls='bar-red'; else if(pct<70) cls='bar-yellow';
+        return `<div style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700;font-size:.9rem">🎯 ${g.name}</div>
+            <div class="actions">
+              <button class="btn-sm btn-edit" onclick="updateGoal('${g.id}',${g.saved_amount})">Update</button>
+              <button class="btn-sm btn-del" onclick="deleteGoal('${g.id}')">🗑</button>
+            </div>
+          </div>
+          <div class="bar-bg" style="margin:6px 0"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted)">
+            <span>${fmt(g.saved_amount)} / ${fmt(g.target_amount)}</span>
+            <span>${pct}%${g.deadline?' · by '+g.deadline:''}</span>
+          </div>
+        </div>`;
+      }).join('')
+    : '<div class="empty" style="padding:16px 0">No goals yet</div>';
+}
+
+async function updateGoal(id,cur) {
+  const val = prompt('Saved amount so far (₦):', cur);
+  if(val===null||isNaN(parseFloat(val))) return;
+  await api(`goals?id=eq.${id}`,'PATCH',{saved_amount:parseFloat(val)});
+  toast('Goal updated!'); loadGoalsPage();
+}
+
+async function deleteGoal(id) {
+  if(!confirm('Delete this goal?')) return;
+  await api(`goals?id=eq.${id}`,'DELETE');
+  toast('Deleted'); loadGoalsPage();
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+(async()=>{
+  updateMonthLabel();
+  document.getElementById('eDate').value=today();
+  document.getElementById('savDate').value=today();
+  await loadCategories();
+  setEntryType('income');
+  loadDashboard();
+})();
+</script>
+</body>
+</html>
